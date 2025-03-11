@@ -11,8 +11,23 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+app.use(express.json());
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.use('/chat');
+app.post('/chat', async (req, res) => {
+  const userMessage = req.body.message;
+
+  try {
+    const reply = await chat(userMessage);
+    res.status(200).json({ reply });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error processing your request' });
+  }
 });
 
 app.listen(process.env.PORT, () => {
@@ -23,7 +38,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })
 
-async function chat() {
+async function chat(message) {
   try {
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
@@ -34,16 +49,16 @@ async function chat() {
         },
         {
           "role": "user",
-          "content": "請推薦我一款好喝的單品咖啡，10個字內的簡答"
+          "content": message,
         },
       ],
     })
-    console.log(completion.choices[0].message.content);
+    return completion.choices[0].message.content;
   } catch (error) {
-    console.error(error)
+    console.error(error);
+    return 'error';
   }
 }
-// chat();
 
 // 串流回覆模式
 async function streamChat() {
@@ -70,4 +85,4 @@ async function streamChat() {
     console.error(error)
   }
 }
-streamChat();
+// streamChat();
