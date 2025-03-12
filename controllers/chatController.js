@@ -7,25 +7,16 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-async function chat(message) {
+async function getChatCompletion(message) {
   try {
     const completion = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
-      messages: [
-        {
-          role: 'system',
-          content: '你是對咖啡知識很了解的人',
-        },
-        {
-          role: 'user',
-          content: message,
-        },
-      ],
+      messages: message,
     });
-    return completion.choices[0].message.content;
+    return completion.choices?.[0]?.message?.content || '抱歉，我無法回應您的問題。';
   } catch (error) {
-    console.error(error);
-    return 'error';
+    console.error('OpenAI API Error:', error);
+    return null;
   }
 }
 
@@ -34,16 +25,7 @@ async function streamChat(message) {
   try {
     const stream = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
-      messages: [
-        {
-          role: 'system',
-          content: '你是對咖啡知識很了解的人',
-        },
-        {
-          role: 'user',
-          content: message,
-        }
-      ],
+      messages: message,
       stream: true, // 啟用串流回覆
     });
 
@@ -58,11 +40,25 @@ async function streamChat(message) {
 export const chatController = async (req, res) => {
   const userMessage = req.body.message;
 
+  if (!userMessage) {
+    return res.status(400).json({ error: '請提供訊息' });
+  }
+
   try {
-    const reply = await chat(userMessage);
+    const message = [
+      { role: 'system', content: '' }, 
+      { role: 'user', content: userMessage },
+    ];
+
+    const reply = await getChatCompletion(message);
+
+    if (reply === null) {
+      return res.status(500).json({ error: '無法取得 OpenAI 回應，請稍後再試' });
+    }
+
     res.status(200).json({ reply });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Error processing your request' });
+    res.status(500).json({ error: '伺服器發生錯誤，請稍後再試' });
   }
 }

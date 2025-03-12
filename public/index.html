@@ -29,6 +29,12 @@
             message: msg
           })
         })
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`HTTP Error: ${response.status}`);
+        }
+
         const data = await response.json();
         return data.reply;
       } catch (error) {
@@ -50,6 +56,9 @@
 
       const messageInput = document.getElementById('message');
       const message = messageInput.value.trim();
+
+      if (!message) return;
+      
       renderMessage(message, 'user');
       messageInput.value = '';
 
