@@ -13,10 +13,55 @@
       聊天內容
     </div>
     <form id="chatForm">
-      <input type="text" name="message" id="message">
+      <input type="text" name="message" id="message" placeholder="輸入訊息..." required>
       <button type="submit">送出</button>
     </form>
   </main>
+  <script>
+    const getReply = async (msg) => {
+      try {
+        const response = await fetch('http://localhost:8000/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: msg
+          })
+        })
+        const data = await response.json();
+        return data.reply;
+      } catch (error) {
+        console.error(error);
+        return '發生錯誤，請稍後再試';
+      }
+    }
+
+    const renderMessage = (txt, sender) => {
+      const responseDiv = document.getElementById('response');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `msg ${sender}`;
+      msgDiv.innerText = txt;
+      responseDiv.appendChild(msgDiv);
+    }
+
+    document.getElementById('chatForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const messageInput = document.getElementById('message');
+      const message = messageInput.value.trim();
+      renderMessage(message, 'user');
+      messageInput.value = '';
+
+      try {
+        const reply = await getReply(message);
+        renderMessage(reply, 'bot');
+      } catch (error) {
+        renderMessage('發生錯誤，請稍後再試', 'bot');
+        console.error(error);
+      }
+    })
+  </script>
 </body>
 
 </html>
