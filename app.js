@@ -20,6 +20,9 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/chat', chatRoutes);
+app.post('/api/poc/webhook-line', (req, res) => {
+  res.status(200).send('Success');
+})
 
 app.listen(process.env.PORT, () => {
   console.log('Server running.')
